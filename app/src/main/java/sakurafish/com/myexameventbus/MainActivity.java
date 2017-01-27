@@ -12,10 +12,10 @@ import android.widget.Toast;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import rx.Observer;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
-
+import io.reactivex.Observer;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -38,7 +38,16 @@ public class MainActivity extends AppCompatActivity {
         // Subscriberは再利用できないので、Observerを使う
         private Observer<? super Object> mReceiverEventObserver = new Observer<Object>() {
             @Override
-            public void onCompleted() {
+            public void onSubscribe(Disposable d) {
+            }
+
+            @Override
+            public void onNext(Object value) {
+                if (value instanceof ReceiverEvent) {
+                    ReceiverEvent event = (ReceiverEvent) value;
+                    ((TextView) getView().findViewById(R.id.TextView)).setText(event.message);
+                    Toast.makeText(getActivity(), event.message, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -46,18 +55,22 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNext(Object o) {
-                if (o instanceof ReceiverEvent) {
-                    ReceiverEvent event = (ReceiverEvent) o;
-                    ((TextView) getView().findViewById(R.id.TextView)).setText(event.message);
-                    Toast.makeText(getActivity(), event.message, Toast.LENGTH_SHORT).show();
-                }
+            public void onComplete() {
             }
         };
 
         private Observer<? super Object> mThreadEventObserver = new Observer<Object>() {
             @Override
-            public void onCompleted() {
+            public void onSubscribe(Disposable d) {
+            }
+
+            @Override
+            public void onNext(Object value) {
+                if (value instanceof ThreadEvent) {
+                    ThreadEvent event = (ThreadEvent) value;
+                    ((TextView) getView().findViewById(R.id.TextView)).setText(event.message);
+                    Toast.makeText(getActivity(), event.message, Toast.LENGTH_SHORT).show();
+                }
             }
 
             @Override
@@ -65,12 +78,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNext(Object o) {
-                if (o instanceof ThreadEvent) {
-                    ThreadEvent event = (ThreadEvent) o;
-                    ((TextView) getView().findViewById(R.id.TextView)).setText(event.message);
-                    Toast.makeText(getActivity(), event.message, Toast.LENGTH_SHORT).show();
-                }
+            public void onComplete() {
             }
         };
 
@@ -114,8 +122,8 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onDestroy() {
             super.onDestroy();
-            mReceiverEventObserver.onCompleted();
-            mThreadEventObserver.onCompleted();
+            mReceiverEventObserver.onComplete();
+            mThreadEventObserver.onComplete();
         }
 
         private void runThread() {
